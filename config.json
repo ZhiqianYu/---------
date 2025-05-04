@@ -1,24 +1,24 @@
 {
     "total_time": {
-        "hours": 0,
-        "minutes": 10,
+        "hours": 8,
+        "minutes": 0,
         "seconds": 0
     },
     "stage_time": {
-        "hours": 0,
-        "minutes": 1,
-        "seconds": 10
+        "hours": 1,
+        "minutes": 30,
+        "seconds": 0
     },
     "random_reminder": {
-        "min": 0,
-        "max": 1
+        "min": 5,
+        "max": 10
     },
     "short_break": {
         "minutes": 0,
         "seconds": 10
     },
     "stage_break": {
-        "minutes": 0,
+        "minutes": 10,
         "seconds": 20
     },
     "sounds": {

@@ -289,7 +289,7 @@ class TimerApp:
 
         self.sound_window = tk.Toplevel(self.root)
         self.sound_window.title("提示音设置")
-        self.sound_window.geometry("320x290")
+        self.sound_window.geometry("330x320")
         self.sound_window.protocol("WM_DELETE_WINDOW", self.close_sound_settings)
 
         notebook = ttk.Notebook(self.sound_window)
@@ -313,9 +313,9 @@ class TimerApp:
         audio_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.mp3', '.wav'))]
 
         list_frame = ttk.Frame(parent)
-        list_frame.pack(fill=tk.BOTH, expand=False, padx=10, pady=10)
+        list_frame.pack(fill=tk.BOTH, expand=False, padx=20, pady=20)
 
-        canvas = tk.Canvas(list_frame, height=190, width=70)
+        canvas = tk.Canvas(list_frame, height=200, width=150)
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
 

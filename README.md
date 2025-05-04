@@ -40,3 +40,14 @@
 ### ✅ 运行方式二：使用打包好的 `.exe`
 
 > 下载发布页中的 `Multi Stage Random Notification Timer.exe`，并确保放在同目录下的 `config.json` 存在。
+
+## 📄 License
+
+This software is licensed for **personal and non-commercial use only**.
+
+For commercial use (including in companies, products, SaaS platforms), you must obtain a paid license. Please contact:
+
+📧 yu-zhiqian@outlook.com  
+🌐 [github.com/ZhiqianYu](https://github.com/ZhiqianYu)
+
+Unauthorized commercial use is **strictly prohibited**.

@@ -1,0 +1,32 @@
+{
+    "total_time": {
+        "hours": 0,
+        "minutes": 10,
+        "seconds": 0
+    },
+    "stage_time": {
+        "hours": 0,
+        "minutes": 1,
+        "seconds": 10
+    },
+    "random_reminder": {
+        "min": 0,
+        "max": 1
+    },
+    "short_break": {
+        "minutes": 0,
+        "seconds": 10
+    },
+    "stage_break": {
+        "minutes": 0,
+        "seconds": 15
+    },
+    "sounds": {
+        "start": "notis.wav",
+        "random": [
+            "notis 1.mp3"
+        ],
+        "stage_break_start": "long pause 2.wav",
+        "total_end": "long pause 1.wav"
+    }
+}

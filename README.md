@@ -16,8 +16,8 @@
 
 ## 🖥️ 界面截图
 
-<img src="![图片](https://github.com/user-attachments/assets/64556f46-d9b5-4a81-a636-124b26dc1be7)" alt="软件界面" width="400"/>
-<img src="![图片](https://github.com/user-attachments/assets/b51369ae-64a3-49ef-8cb2-f6ce8f82e269)" alt="提示音设置" width="250"/>
+<img src="images/pic1.png" alt="软件界面" width="400"/>
+<img src="images/pic2.png" alt="提示音设置" width="250"/>
 
 ---
 

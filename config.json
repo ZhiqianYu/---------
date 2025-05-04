@@ -19,7 +19,7 @@
     },
     "stage_break": {
         "minutes": 0,
-        "seconds": 15
+        "seconds": 20
     },
     "sounds": {
         "start": "notis.wav",

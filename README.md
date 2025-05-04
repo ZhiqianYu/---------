@@ -16,9 +16,8 @@
 
 ## 🖥️ 界面截图
 
-![图片](https://github.com/user-attachments/assets/64556f46-d9b5-4a81-a636-124b26dc1be7)
-![图片](https://github.com/user-attachments/assets/b51369ae-64a3-49ef-8cb2-f6ce8f82e269)
-
+<img src="images/![图片](https://github.com/user-attachments/assets/64556f46-d9b5-4a81-a636-124b26dc1be7)" alt="软件界面" width="400"/>
+<img src="images/![图片](https://github.com/user-attachments/assets/b51369ae-64a3-49ef-8cb2-f6ce8f82e269)" alt="提示音设置" width="250"/>
 
 ---
 
@@ -41,6 +40,3 @@
 ### ✅ 运行方式二：使用打包好的 `.exe`
 
 > 下载发布页中的 `Multi Stage Random Notification Timer.exe`，并确保放在同目录下的 `config.json` 存在。
-
-目录结构示例：
-

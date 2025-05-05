@@ -1,0 +1,5 @@
+CompanyName=Zhiqian Yu
+FileDescription=Multi Stage Random Notification Timer
+FileVersion=1.1.0
+ProductName=MultiStageTimer
+ProductVersion=1.1.0

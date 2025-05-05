@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk, messagebox
 import time
 import random
@@ -10,11 +11,20 @@ import threading
 class TimerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("多阶段随机提醒计时器 by Zhiqian Yu")
-        self.root.geometry("480x460")
-        
+        self.root.title("多阶段随机提醒计时器 @ZhiqianYu")
+        self.root.geometry("480x425")
+        self.root.resizable(False, False)
+
+        # 定义统一字体，设置所有默认字体为 Segoe UI (win)
+        self.default_font = tkfont.Font(family="Segoe UI", size=10)
+        self.large_font = tkfont.Font(family="Segoe UI", size=24, weight="bold")
+        self.mid_font = tkfont.Font(family="Segoe UI", size=12)
+        self.root.option_add("*Font", self.default_font)
+
         # 初始化pygame用于音频播放
         pygame.mixer.init()
+        self.audio_cache = {}  # 缓存音频对象
+
         
         # 默认设置
         self.config = {
@@ -44,6 +54,7 @@ class TimerApp:
         self.short_break_seconds = tk.StringVar()
         self.stage_break_minutes = tk.StringVar()
         self.stage_break_seconds = tk.StringVar()
+        self.main_button_state = "ready"  # 可选值: ready, running, paused
         
         # 初始化计时器状态
         self.timer_running = False
@@ -101,23 +112,33 @@ class TimerApp:
             messagebox.showerror("错误", f"加载配置文件失败: {str(e)}")
     
     def save_config(self):
-        """保存配置到文件"""
+        """保存配置到文件（仅当内容变化时）"""
         try:
-            CONFIG_FILE = "config.json"  # Define the configuration file path
+            CONFIG_FILE = "config.json"
+            new_config = json.dumps(self.config, ensure_ascii=False, indent=4)
+
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                    current = f.read()
+                    if current.strip() == new_config.strip():
+                        print("配置无变化，跳过保存")
+                        return  # 无需保存
+
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(self.config, f, ensure_ascii=False, indent=4)
+                f.write(new_config)
             print("配置文件已成功保存！")
         except Exception as e:
             messagebox.showerror("错误", f"保存配置文件失败: {str(e)}")
+
     
     def setup_ui(self):
         """设置用户界面"""
         # 主框架分为上下两部分
-        top_frame = ttk.Frame(self.root, padding=5)
-        top_frame.pack(fill=tk.X)
+        top_frame = ttk.Frame(self.root)
+        top_frame.pack(fill=tk.X, padx=5, pady=0)
         
-        bottom_frame = ttk.Frame(self.root, padding=5)
-        bottom_frame.pack(fill=tk.BOTH, expand=True)
+        bottom_frame = ttk.Frame(self.root)
+        bottom_frame.pack(fill=tk.BOTH, padx=5, pady=0)
         
         # 上半部分：时间设置
         self.setup_time_settings(top_frame)
@@ -127,18 +148,6 @@ class TimerApp:
         
         # 控制按钮
         self.setup_control_buttons(bottom_frame)
-
-        # 底部信息栏（邮箱和 GitHub）
-        footer_frame = ttk.Frame(self.root)
-        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=0)
-
-        email_label = tk.Label(footer_frame, text="📧 yu-zhiqian@outlook.com", fg="blue", cursor="hand2")
-        email_label.pack(side=tk.LEFT, padx=10)
-        email_label.bind("<Button-1>", lambda e: os.system('start mailto:yu-zhiqian@outlook.com'))
-
-        github_label = tk.Label(footer_frame, text="🌐 https://github.com/ZhiqianYu", fg="blue", cursor="hand2")
-        github_label.pack(side=tk.RIGHT, padx=10)
-        github_label.bind("<Button-1>", lambda e: os.system('start https://github.com/ZhiqianYu'))
     
     def setup_time_settings(self, parent):
         """设置时间配置部分"""
@@ -153,8 +162,8 @@ class TimerApp:
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
         
         # 左边：总时间、阶段时间、随机提醒时间
-        total_frame = ttk.LabelFrame(left_frame, text="总时间设置")
-        total_frame.pack(fill=tk.BOTH, pady=0, expand=True)
+        total_frame = ttk.LabelFrame(left_frame, text="总时间设置", padding=0, labelanchor="nw")
+        total_frame.pack(fill=tk.BOTH, pady=0)
         
         ttk.Label(total_frame).grid(row=0, column=0, padx=5, pady=5)
         ttk.Spinbox(total_frame, from_=0, to=23, width=3, textvariable=self.total_hours).grid(row=0, column=1, padx=2)
@@ -164,8 +173,8 @@ class TimerApp:
         ttk.Spinbox(total_frame, from_=0, to=59, width=3, textvariable=self.total_seconds).grid(row=0, column=5, padx=2)
         ttk.Label(total_frame, text="秒").grid(row=0, column=6, padx=2)
         
-        stage_frame = ttk.LabelFrame(left_frame, text="阶段时间设置")
-        stage_frame.pack(fill=tk.BOTH, pady=5, expand=True)
+        stage_frame = ttk.LabelFrame(left_frame, text="阶段时间设置", padding=0, labelanchor="nw")
+        stage_frame.pack(fill=tk.BOTH, pady=2)
         
         ttk.Label(stage_frame).grid(row=0, column=0, padx=5, pady=5)
         ttk.Spinbox(stage_frame, from_=0, to=23, width=3, textvariable=self.stage_hours).grid(row=0, column=1, padx=2)
@@ -175,8 +184,8 @@ class TimerApp:
         ttk.Spinbox(stage_frame, from_=0, to=59, width=3, textvariable=self.stage_seconds).grid(row=0, column=5, padx=2)
         ttk.Label(stage_frame, text="秒").grid(row=0, column=6, padx=2)
         
-        random_frame = ttk.LabelFrame(left_frame, text="随机提醒时间")
-        random_frame.pack(fill=tk.BOTH, pady=5, expand=True)
+        random_frame = ttk.LabelFrame(left_frame, text="随机提醒时间", padding=0, labelanchor="nw")
+        random_frame.pack(fill=tk.BOTH, pady=2)
         
         ttk.Label(random_frame).grid(row=0, column=0, padx=5, pady=5)
         ttk.Spinbox(random_frame, from_=1, to=60, width=3, textvariable=self.random_min).grid(row=0, column=1, padx=2)
@@ -185,8 +194,8 @@ class TimerApp:
         ttk.Label(random_frame, text="分钟").grid(row=0, column=4, padx=2)
         
         # 右边：短休息时间、阶段休息时间、提示音设置按钮
-        short_break_frame = ttk.LabelFrame(right_frame, text="短休息时间")
-        short_break_frame.pack(fill=tk.BOTH, pady=0, expand=True)
+        short_break_frame = ttk.LabelFrame(right_frame, text="短休息时间", padding=0, labelanchor="nw")
+        short_break_frame.pack(fill=tk.BOTH, pady=0)
         
         ttk.Label(short_break_frame).grid(row=0, column=0, padx=5, pady=5)
         ttk.Spinbox(short_break_frame, from_=0, to=59, width=3, textvariable=self.short_break_minutes).grid(row=0, column=1, padx=2)
@@ -194,18 +203,17 @@ class TimerApp:
         ttk.Spinbox(short_break_frame, from_=0, to=59, width=3, textvariable=self.short_break_seconds).grid(row=0, column=3, padx=2)
         ttk.Label(short_break_frame, text="秒").grid(row=0, column=4, padx=2)
         
-        stage_break_frame = ttk.LabelFrame(right_frame, text="阶段休息时间")
-        stage_break_frame.pack(fill=tk.BOTH, pady=5, expand=True)
+        stage_break_frame = ttk.LabelFrame(right_frame, text="阶段休息时间", padding=0, labelanchor="nw")
+        stage_break_frame.pack(fill=tk.BOTH, pady=2)
         
         ttk.Label(stage_break_frame).grid(row=0, column=0, padx=5, pady=5)
         ttk.Spinbox(stage_break_frame, from_=0, to=59, width=3, textvariable=self.stage_break_minutes).grid(row=0, column=1, padx=2)
         ttk.Label(stage_break_frame, text="分钟").grid(row=0, column=2, padx=2)
         ttk.Spinbox(stage_break_frame, from_=0, to=59, width=3, textvariable=self.stage_break_seconds).grid(row=0, column=3, padx=2)
         ttk.Label(stage_break_frame, text="秒").grid(row=0, column=4, padx=2)
-        
-        # 提示音设置按钮
-        sound_button = ttk.Button(right_frame, text="提示音设置", command=self.open_sound_settings)
-        sound_button.pack(pady=5)
+
+        self.status_label = ttk.Label(right_frame, text="状态: 就绪", anchor="center", font=self.mid_font)
+        self.status_label.pack(pady=20, anchor="center")
     
     def setup_timer_display(self, parent):
         """设置计时器显示部分"""
@@ -217,22 +225,23 @@ class TimerApp:
         total_display_frame = ttk.LabelFrame(time_display_frame, text="总计时")
         total_display_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
-        self.total_time_label = ttk.Label(total_display_frame, text="00:00:00", font=("Arial", 24))
-        self.total_time_label.pack(pady=5)
+        
+        self.total_time_label = ttk.Label(total_display_frame, text="00:00:00", font=self.large_font)
+        self.total_time_label.pack(pady=0)
         
         # 阶段时间显示
         stage_display_frame = ttk.LabelFrame(time_display_frame, text="阶段计时")
-        stage_display_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=0)
+        stage_display_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
-        self.stage_time_label = ttk.Label(stage_display_frame, text="00:00:00", font=("Arial", 24))
-        self.stage_time_label.pack(pady=5)
+        self.stage_time_label = ttk.Label(stage_display_frame, text="00:00:00", font=self.large_font)
+        self.stage_time_label.pack(pady=0)
         
         # 休息时间显示
         break_display_frame = ttk.LabelFrame(time_display_frame, text="休息时长")
         break_display_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
-        self.break_time_label = ttk.Label(break_display_frame, text="00:00:00", font=("Arial", 24))
-        self.break_time_label.pack(pady=5)
+        self.break_time_label = ttk.Label(break_display_frame, text="00:00:00", font=self.large_font)
+        self.break_time_label.pack(pady=0)
         
         # 总时间进度条
         total_progress_frame = ttk.LabelFrame(parent, text="总计时进度")
@@ -254,22 +263,18 @@ class TimerApp:
         control_frame.pack(fill=tk.X, pady=5)
         
         # 左侧按钮
-        self.start_button = ttk.Button(control_frame, text="开始", command=self.start_timer)
-        self.start_button.pack(side=tk.LEFT, padx=5)
-        
-        self.pause_button = ttk.Button(control_frame, text="暂停", command=self.pause_timer, state=tk.DISABLED)
-        self.pause_button.pack(side=tk.LEFT, padx=5)
-        
-        self.stop_button = ttk.Button(control_frame, text="停止", command=self.stop_timer, state=tk.DISABLED)
-        self.stop_button.pack(side=tk.LEFT, padx=5)
-        
-        # 右侧状态标签
-        self.status_label = ttk.Label(control_frame, text="状态: 就绪", anchor="e")
-        self.status_label.pack(side=tk.RIGHT, padx=5)
-    
-    def open_sound_settings(self):
-        """打开提示音设置窗口"""
+        self.main_button = ttk.Button(control_frame, text="开始", command=self.handle_main_button)
+        self.main_button.pack(side=tk.LEFT, padx=5)
 
+        
+        self.stop_button = ttk.Button(control_frame, text="重置", command=self.stop_timer, state=tk.DISABLED)
+        self.stop_button.pack(side=tk.LEFT, padx=5)
+
+        # 提示音设置按钮
+        self.settings_button = ttk.Button(control_frame, text="设置", command=self.open_settings_window)
+        self.settings_button.pack(side=tk.LEFT, padx=5)
+    
+    def open_settings_window(self):
         # 检查是否有任何可用音频文件
         has_audio = self.check_notification_audio_files()
         if not has_audio:
@@ -288,8 +293,9 @@ class TimerApp:
             return
 
         self.sound_window = tk.Toplevel(self.root)
-        self.sound_window.title("提示音设置")
-        self.sound_window.geometry("330x320")
+        self.sound_window.title("设置和关于")
+        self.sound_window.geometry("400x335")
+        self.sound_window.resizable(False, False)
         self.sound_window.protocol("WM_DELETE_WINDOW", self.close_sound_settings)
 
         notebook = ttk.Notebook(self.sound_window)
@@ -297,6 +303,48 @@ class TimerApp:
 
         self.sound_vars = {}
         self.refresh_sound_tabs(notebook)
+
+        
+        # 添加版权和联系信息页签
+        about_frame = ttk.Frame(notebook)
+        notebook.add(about_frame, text="关于")
+
+        ttk.Label(about_frame, text="作者：Zhiqian Yu", font=self.mid_font).pack(pady=60)
+        email = tk.Label(about_frame, text="📧 yu-zhiqian@outlook.com", fg="blue", cursor="hand2")
+        email.pack()
+        email.bind("<Button-1>", lambda e: os.system('start mailto:yu-zhiqian@outlook.com'))
+
+        github = tk.Label(about_frame, text="🌐 github.com/ZhiqianYu", fg="blue", cursor="hand2")
+        github.pack(pady=5)
+        github.bind("<Button-1>", lambda e: os.system('start https://github.com/ZhiqianYu'))
+
+        ttk.Label(about_frame, text="V1.1 版权所有 © 2024", font=self.default_font).pack(pady=10)
+
+        # 添加使用说明
+        about_frame = ttk.Frame(notebook)
+        instruction_frame = ttk.Frame(notebook)
+        notebook.add(instruction_frame, text="使用说明")
+
+        # 创建 Canvas + Scrollbar
+        canvas = tk.Canvas(instruction_frame)
+        scrollbar = ttk.Scrollbar(instruction_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        # 滚动内容区域
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # 添加 Label 内容
+        label = ttk.Label(scrollable_frame, text=instruction_text, wraplength=300, justify="left", font=self.default_font)
+        label.pack(padx=40, pady=10, anchor="w")
 
         # 按钮区
         button_frame = ttk.Frame(self.sound_window)
@@ -362,14 +410,14 @@ class TimerApp:
 
         # 创建并添加标签页
         tabs_info = [
-            ("计时开始/恢复", "notis", "start", False),
+            ("计时开始", "notis", "start", False),
             ("随机提醒", "notis", "random", True),
             ("阶段休息开始", "pause", "stage_break_start", False),
             ("总计时结束", "pause", "total_end", False)
         ]
 
         for tab_name, folder, config_key, multiple in tabs_info:
-            frame = ttk.Frame(notebook)
+            frame = ttk.Frame(notebook, padding=(50, 5))  # 设置左右间距为10，上下间距为5
             notebook.add(frame, text=tab_name)
             self.setup_sound_list(frame, folder, config_key, multiple)
 
@@ -477,26 +525,12 @@ class TimerApp:
                 threading.Thread(target=self.timer_loop, daemon=True).start()
                 
                 # 更新按钮状态
-                self.start_button.config(state=tk.DISABLED)
-                self.pause_button.config(state=tk.NORMAL, text="暂停")
                 self.stop_button.config(state=tk.NORMAL)
                 
                 # 更新状态标签
                 self.status_label.config(text="状态: 计时中 - 阶段计时")
         except ValueError as e:
             messagebox.showerror("错误", f"请输入有效的数字: {str(e)}")
-    
-    def pause_timer(self):
-        """暂停/继续计时"""
-        pygame.mixer.music.stop()  # 停止当前播放的音频
-        if self.paused:
-            self.paused = False
-            self.pause_button.config(text="暂停")
-            self.status_label.config(text=f"状态: 计时中 - {self.get_state_label()}")
-        else:
-            self.paused = True
-            self.pause_button.config(text="继续")
-            self.status_label.config(text=f"状态: 已暂停 - {self.get_state_label()}")
     
     def stop_timer(self):
         """停止计时"""
@@ -519,8 +553,7 @@ class TimerApp:
         self.stage_progress["value"] = 0
         
         # 更新按钮状态
-        self.start_button.config(state=tk.NORMAL)
-        self.pause_button.config(state=tk.DISABLED, text="暂停")
+        self.main_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         
         # 更新状态标签
@@ -537,41 +570,33 @@ class TimerApp:
         return "就绪"
     
     def play_notification(self, sound_type):
-        """播放通知音效"""
         try:
             # 停止当前播放的音频
             pygame.mixer.music.stop()
-            pygame.mixer.music.unload()
-            
+
             file_path = None
-            
             if sound_type == "random" and self.config["sounds"]["random"]:
-                # 随机选择一个提醒音
                 sound_file = random.choice(self.config["sounds"]["random"])
                 file_path = os.path.join("notification", "notis", sound_file)
             elif sound_type in self.config["sounds"] and self.config["sounds"][sound_type]:
-                # 播放指定的音效
                 sound_file = self.config["sounds"][sound_type]
-                
-                if sound_type == "start" or sound_type == "random":
-                    folder = "notis"
-                elif sound_type in ["stage_break_start", "total_end"]:
-                    folder = "pause"
-                else:
-                    return
-                
+                folder = "notis" if sound_type in ["start", "random"] else "pause"
                 file_path = os.path.join("notification", folder, sound_file)
-            
-            # 如果未选择音频，直接返回，不播放音效
+
             if not file_path or not os.path.exists(file_path):
                 print(f"音频文件未找到: {file_path}")
                 return
-            
-            # 加载并播放音频
-            pygame.mixer.music.load(file_path)
-            pygame.mixer.music.play()
+
+            # 使用缓存播放
+            if file_path not in self.audio_cache:
+                self.audio_cache[file_path] = pygame.mixer.Sound(file_path)
+
+            sound = self.audio_cache[file_path]
+            sound.play()
+
         except Exception as e:
             print(f"播放音频失败: {str(e)}")
+
     
     def timer_loop(self):
         initial_total_time = self.total_time_left
@@ -691,9 +716,9 @@ class TimerApp:
 
     def reset_timer_ui(self):
         """重置计时器结束时的UI状态"""
-        self.root.after(0, lambda: self.start_button.config(state=tk.NORMAL))
-        self.root.after(0, lambda: self.pause_button.config(state=tk.DISABLED))
         self.root.after(0, lambda: self.stop_button.config(state=tk.DISABLED))
+        self.root.after(0, lambda: self.main_button.config(text="开始"))
+        self.main_button_state = "ready"
         self.status_label.config(text="状态: 就绪")
         self.total_progress["value"] = 0
         self.stage_progress["value"] = 0
@@ -709,6 +734,39 @@ class TimerApp:
                 if files:
                     return True  # 有至少一个音频文件
         return False
+    
+    def handle_main_button(self):
+        if self.main_button_state == "ready":
+            self.start_timer()
+            self.main_button.config(text="暂停")
+            self.main_button_state = "running"
+        elif self.main_button_state == "running":
+            self.paused = True
+            pygame.mixer.music.stop()
+            self.status_label.config(text=f"状态: 已暂停 - {self.get_state_label()}")
+            self.main_button.config(text="继续")
+            self.main_button_state = "paused"
+        elif self.main_button_state == "paused":
+            self.paused = False
+            self.status_label.config(text=f"状态: 计时中 - {self.get_state_label()}")
+            self.main_button.config(text="暂停")
+            self.main_button_state = "running"
+
+# 使用说明内容
+instruction_text = """
+在阶段式学习中，合理的时间管理和科学的复习方法能够显著提升学习效率和记忆效果。多阶段随机提醒计时器 的设计灵感来源于以下理念：
+
+1. 随机提醒：
+    在每个学习阶段中，设置每隔3-5分钟的随机提醒。当提醒响起时，可以闭上眼睛，清空大脑,回顾刚才学习的内容。这一短暂的“复盘”可以帮助大脑快速整理信息，重新激活刚才激活过的神经通路。这种神经通路的激活速度是直接再次阅读知识点的10-20倍。这意味着，10 秒的时间通过这种技巧可以实现相当于3-5分钟高效复习的效果，并且可以保持注意力集中。
+
+2. 阶段时间：
+    学习阶段是较长时间的专注学习期。在阶段结束后，建议进行一次较长的休息，彻底放松大脑。这不仅有助于缓解大脑疲劳，还能进一步巩固记忆。
+
+3. 总时间：
+    可以根据一天的学习目标，设置多个学习阶段与休息时间的组合，达到科学高效的一天学习计划。
+
+通过这种方法，多阶段随机提醒计时器 不仅是一个简单的时间管理工具，更是一个助力高效学习的好帮手。
+"""
 
 
 if __name__ == "__main__":

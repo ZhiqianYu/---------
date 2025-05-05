@@ -19,10 +19,10 @@
     },
     "stage_break": {
         "minutes": 10,
-        "seconds": 20
+        "seconds": 24
     },
     "sounds": {
-        "start": "notis.wav",
+        "start": "notis 5.wav",
         "random": [
             "notis 1.mp3"
         ],
